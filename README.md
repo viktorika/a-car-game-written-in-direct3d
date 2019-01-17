@@ -1,2 +1,2 @@
-# a-car-game-written-in-direct3d
-This is a car game written in direct3d, used as a beginner for d3d exercises.
+# 用direct3d编写的汽车小游戏
+这是一个使用direct3d编写的汽车小游戏，作为d3d的初学者练习用的
