@@ -1,6 +1,13 @@
 #include "GameDemo.h"
+#include <string>
+
+using std::string;
+using namespace DirectX;
+
+const string texture = "\\Texture\\";
 
 GameDemo::GameDemo()
+	:colorMapSampler_(nullptr)
 {}
 
 GameDemo::~GameDemo() 
@@ -8,16 +15,81 @@ GameDemo::~GameDemo()
 
 bool GameDemo::LoadContent()
 {
+	HRESULT d3dResult;
+	//编译并创建顶点着色器
+	ID3DBlob* vsBuffer = 0;
+	bool compileResult = CompileD3DShader(L"Fx\\solid.fx", "VS_Main", "vs_5_0", &vsBuffer);
+	if (compileResult == false)
+		return false;
+	d3dResult = d3dDevice_->CreateVertexShader(vsBuffer->GetBufferPointer(), vsBuffer->GetBufferSize(), 0, &solidColorVS_);
+	if (FAILED(d3dResult))
+	{
+		if (vsBuffer)
+			vsBuffer->Release();
+		return false;
+	}
+	//创建顶点输入布局
+	D3D11_INPUT_ELEMENT_DESC solidColorLayout[] =
+	{
+	{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+	};
+	unsigned int totalLayoutElements = ARRAYSIZE(solidColorLayout);
+	d3dResult = d3dDevice_->CreateInputLayout(solidColorLayout, totalLayoutElements, vsBuffer->GetBufferPointer(), vsBuffer->GetBufferSize(), &inputLayout_);
+	vsBuffer->Release();
+	if (FAILED(d3dResult))
+		return false;
+	//编译并创建像素着色器
+	ID3DBlob* psBuffer = 0;
+	compileResult = CompileD3DShader(L"Fx\\solid.fx", "PS_Main", "ps_5_0", &psBuffer);
+	if (compileResult == false)
+		return false;
+	d3dResult = d3dDevice_->CreatePixelShader(psBuffer->GetBufferPointer(), psBuffer->GetBufferSize(), 0, &solidColorPS_);
+	psBuffer->Release();
+	if (FAILED(d3dResult))
+		return false;
+	//创建采样状态对象
+	D3D11_SAMPLER_DESC colorMapDesc;
+	ZeroMemory(&colorMapDesc, sizeof(colorMapDesc));
+	colorMapDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	colorMapDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	colorMapDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	colorMapDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	colorMapDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	colorMapDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	d3dResult = d3dDevice_->CreateSamplerState(&colorMapDesc, &colorMapSampler_);
+	if (FAILED(d3dResult))
+		return false;
+	//创建投影矩阵和常量缓存
+	D3D11_BUFFER_DESC constDesc;
+	ZeroMemory(&constDesc, sizeof(constDesc));
+	constDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	constDesc.ByteWidth = sizeof(XMMATRIX);
+	constDesc.Usage = D3D11_USAGE_DEFAULT;
+	projMatrix_ = XMMatrixPerspectiveFovLH(XM_PIDIV2, 16.0f / 9.0f, 0.01f, 40000.0f);
+	projMatrix_ = XMMatrixTranspose(projMatrix_);
+	d3dResult = d3dDevice_->CreateBuffer(&constDesc, 0, &worldCB_);
+	if (FAILED(d3dResult))
+		return false;
+	d3dResult = d3dDevice_->CreateBuffer(&constDesc, 0, &viewCB_);
+	if (FAILED(d3dResult))
+		return false;
+	d3dResult = d3dDevice_->CreateBuffer(&constDesc, 0, &projCB_);
+	if (FAILED(d3dResult))
+		return false;
 	//设置照相机
-	camera_.SetPositions(XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 10.0f));
+	camera_.SetPositions(XMFLOAT3(0.0f, 10.0f, -10.0f), XMFLOAT3(0.0f, 10.0f, 10.0f));
 	//初始化skybox
 	if (!skybox_.Init_Resource(d3dDevice_)) return false;
-	skybox_.setPosition(camera_.getPosition());
+	if (!brick_.Init_Resource(d3dDevice_)) return false;
 	return true;
 }
 
 void GameDemo::UnloadContent()
-{}
+{
+	if (colorMapSampler_) colorMapSampler_->Release();
+	colorMapSampler_ = nullptr;
+}
 
 void GameDemo::Update(float dt)
 {}
@@ -29,7 +101,19 @@ void GameDemo::Render()
 	float clearColor[4] = { 0.0f, 0.0f, 0.25f, 1.0f };
 	d3dContext_->ClearRenderTargetView(backBufferTarget_, clearColor);
 	d3dContext_->ClearDepthStencilView(depthStencilView_, D3D11_CLEAR_DEPTH, 1.0f, 0);
-	skybox_.Render(d3dContext_,camera_,swapChain_);
+	d3dContext_->IASetInputLayout(inputLayout_);
+	d3dContext_->VSSetShader(solidColorVS_, 0, 0);
+	d3dContext_->PSSetShader(solidColorPS_, 0, 0);
+	d3dContext_->PSSetSamplers(0, 1, &colorMapSampler_);
+	XMMATRIX viewMatrix_ = camera_.GetViewMatrix();
+	viewMatrix_ = XMMatrixTranspose(viewMatrix_);
+	d3dContext_->UpdateSubresource(viewCB_, 0, 0, &viewMatrix_, 0, 0);
+	d3dContext_->UpdateSubresource(projCB_, 0, 0, &projMatrix_, 0, 0);
+	d3dContext_->VSSetConstantBuffers(1, 1, &viewCB_);
+	d3dContext_->VSSetConstantBuffers(2, 1, &projCB_);
+	skybox_.Render(d3dContext_, worldCB_,viewCB_);
+	brick_.Render(d3dContext_, worldCB_,viewCB_);
+	swapChain_->Present(0, 0);
 }
 
 

@@ -31,6 +31,7 @@ protected:
 	ID3D11Texture2D* depthTexture_;
 	ID3D11DepthStencilView* depthStencilView_;
 
+	bool CompileD3DShader(LPCTSTR filePath, const char* entry, const char* shaderModel, ID3DBlob** buffer);
 };
 
-bool CompileD3DShader(LPCTSTR filePath, const char* entry, const char* shaderModel, ID3DBlob** buffer);
+

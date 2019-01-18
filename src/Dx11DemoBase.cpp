@@ -153,7 +153,7 @@ bool Dx11DemoBase::Initialize(HINSTANCE hInstance, HWND hwnd)
 	return LoadContent();
 }
 
-bool CompileD3DShader(LPCTSTR filePath, const char* entry, const char* shaderModel, ID3DBlob** buffer)
+bool Dx11DemoBase::CompileD3DShader(LPCTSTR filePath, const char* entry, const char* shaderModel, ID3DBlob** buffer)
 {
 	DWORD shaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
 #if defined( DEBUG ) || defined( _DEBUG )
