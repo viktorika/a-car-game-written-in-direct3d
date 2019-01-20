@@ -1,4 +1,5 @@
 #include<Windows.h>
+#include <windowsx.h>
 #include<memory>
 #include"GameDemo.h"
 
@@ -6,6 +7,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	PAINTSTRUCT paintStruct;
 	HDC hDC;
+	int xPos, yPos;
 	switch (message)
 	{
 	case WM_PAINT:
@@ -53,7 +55,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE prevInstance, LPWSTR cmdLine,
 	std::shared_ptr<Dx11DemoBase> demo(new GameDemo());
 	// Demo Initialize
 	bool result = demo->Initialize(hInstance, hwnd);
-	if (result == false)
+	if (!result)
 		return -1;
 	MSG msg = { 0 };
 	while (msg.message != WM_QUIT)
@@ -64,7 +66,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE prevInstance, LPWSTR cmdLine,
 			DispatchMessage(&msg);
 		}
 		// Update and Draw
-		demo->Update(0.0f);
+		demo->Update();
 		demo->Render();
 	}
 	// Demo Shutdown

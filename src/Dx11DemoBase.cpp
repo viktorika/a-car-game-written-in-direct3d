@@ -36,12 +36,20 @@ void Dx11DemoBase::Shutdown()
 	if (d3dDevice_) d3dDevice_->Release();
 	if (depthStencilView_) depthStencilView_->Release();
 	if (depthTexture_) depthTexture_->Release();
+	if (keyboardDevice_)
+	{
+		keyboardDevice_->Unacquire();
+		keyboardDevice_->Release();
+	}
+	if (directInput_) directInput_->Release();
 	backBufferTarget_ = nullptr;
 	swapChain_ = nullptr;
 	d3dContext_ = nullptr;
 	d3dDevice_ = nullptr;
 	depthStencilView_ = nullptr;
 	depthTexture_ = nullptr;
+	keyboardDevice_ = nullptr;
+	directInput_ = nullptr;
 }
 
 bool Dx11DemoBase::Initialize(HINSTANCE hInstance, HWND hwnd)
@@ -150,6 +158,55 @@ bool Dx11DemoBase::Initialize(HINSTANCE hInstance, HWND hwnd)
 
 	//设置视图
 	d3dContext_->OMSetRenderTargets(1, &backBufferTarget_, depthStencilView_);
+	//初始化键盘输入设备
+	ZeroMemory(keyboardKeys_, sizeof(keyboardKeys_));
+	ZeroMemory(prevKeyboardKeys_, sizeof(prevKeyboardKeys_));
+	result = DirectInput8Create(hInstance_, DIRECTINPUT_VERSION, IID_IDirectInput8, (void**)&directInput_, 0);
+	if (FAILED(result))
+	{
+		return false;
+	}
+	result = directInput_->CreateDevice(GUID_SysKeyboard, &keyboardDevice_, 0);
+	if (FAILED(result))
+	{
+		return false;
+	}
+	result = keyboardDevice_->SetDataFormat(&c_dfDIKeyboard);
+	if (FAILED(result))
+	{
+		return false;
+	}
+	result = keyboardDevice_->SetCooperativeLevel(hwnd_, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE);
+	if (FAILED(result))
+	{
+		return false;
+	}
+	result = keyboardDevice_->Acquire();
+	if (FAILED(result))
+	{
+		return false;
+	}
+	//初始化鼠标设备
+	result = directInput_->CreateDevice(GUID_SysMouse, &mouseDevice_, 0);
+	if (FAILED(result))
+	{
+		return false;
+	}
+	result = mouseDevice_->SetDataFormat(&c_dfDIMouse);
+	if (FAILED(result))
+	{
+		return false;
+	}
+	result = mouseDevice_->SetCooperativeLevel(hwnd_, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE);
+	if (FAILED(result))
+	{
+		return false;
+	}
+	result = mouseDevice_->Acquire();
+	if (FAILED(result))
+	{
+		return false;
+	}
 	return LoadContent();
 }
 

@@ -1,6 +1,7 @@
 #include "SkyBox.h"
 #include  <WICTextureLoader.h>
 #include "DX11DemoBase.h"
+#include "VertexPos.h"
 
 using namespace DirectX;
 
@@ -10,24 +11,6 @@ SkyBox::SkyBox()
 {
 	for (auto &it : colorMap_) 
 		it = nullptr;
-	facevertexs_ = {
-		array<int,4>{4,5,6,7},
-		{2,3,0,1},
-		{4,6,0,2},
-		{7,5,3,1},
-		{6,7,2,3},
-		{5,4,1,0}
-	};
-	postion_ = {
-		XMFLOAT3(-1,-1,-1),
-		XMFLOAT3(1,-1,-1),
-		XMFLOAT3(-1,-1,1),
-		XMFLOAT3(1,-1,1),
-		XMFLOAT3(-1,1,-1),
-		XMFLOAT3(1,1,-1),
-		XMFLOAT3(-1,1,1),
-		XMFLOAT3(1,1,1)
-	};
 }
 
 SkyBox::~SkyBox() {
@@ -36,7 +19,7 @@ SkyBox::~SkyBox() {
 	vertexBuffer_ = nullptr;
 	indexBuffer_ = nullptr;
 	for (auto &it : colorMap_) {
-		it->Release();
+		if (it) it->Release();
 		it = nullptr;
 	}
 }
@@ -48,7 +31,7 @@ bool SkyBox::Init_Resource(ID3D11Device* d3dDevice_) {
 	ZeroMemory(&vertexDesc, sizeof(vertexDesc));
 	vertexDesc.Usage = D3D11_USAGE_DEFAULT;
 	vertexDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	vertexDesc.ByteWidth = sizeof(VertexPos) * 24;
+	vertexDesc.ByteWidth = sizeof(VertexPos) * 4;
 	d3dResult = d3dDevice_->CreateBuffer(&vertexDesc, nullptr, &vertexBuffer_);
 	if (FAILED(d3dResult))
 		return false;

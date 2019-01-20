@@ -1,12 +1,18 @@
 #pragma once
 
 #include <DirectXmath.h>
+#include <memory>
 #include "Dx11DemoBase.h"
 #include "LookAtCamera .h"
+#include "ArcCamera.h"
 #include "SkyBox.h"
 #include "Brick.h"
+#include "Car.h"
+#include <vector>
 
 using DirectX::XMMATRIX;
+using std::shared_ptr;
+using std::vector;
 
 class GameDemo :public Dx11DemoBase{
 public:
@@ -14,13 +20,17 @@ public:
 	virtual ~GameDemo();
 	bool LoadContent();
 	void UnloadContent();
-	void Update(float dt);
+	void Update();
 	void Render();
+	void Switch();
 
 private:
-	LookAtCamera camera_;
+	vector<shared_ptr<Camera>> camera_;
+	int status_;
+
 	SkyBox skybox_;
 	Brick brick_;
+	Car car_;
 
 	ID3D11SamplerState* colorMapSampler_;
 
@@ -33,4 +43,5 @@ private:
 	ID3D11PixelShader* solidColorPS_;
 
 	ID3D11InputLayout* inputLayout_;
+	
 };

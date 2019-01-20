@@ -2,6 +2,10 @@
 
 #include <d3d11.h>
 #include <d3dcompiler.h>
+#include <dinput.h>
+
+#define KEYDOWN(name, key) ( name[key] & 0x80 )
+#define BUTTONDOWN(name, key) ( name.rgbButtons[key] & 0x80 )
 
 class Dx11DemoBase{
 public:
@@ -13,7 +17,7 @@ public:
 
 	virtual bool LoadContent();
 	virtual void UnloadContent();
-	virtual void Update(float dt) = 0;
+	virtual void Update() = 0;
 	virtual void Render() = 0;
 
 protected:
@@ -30,6 +34,13 @@ protected:
 
 	ID3D11Texture2D* depthTexture_;
 	ID3D11DepthStencilView* depthStencilView_;
+
+	LPDIRECTINPUT8 directInput_;
+	LPDIRECTINPUTDEVICE8 keyboardDevice_;
+	LPDIRECTINPUTDEVICE8 mouseDevice_;
+	char keyboardKeys_[256];
+	char prevKeyboardKeys_[256];
+	DIMOUSESTATE mouseState_;
 
 	bool CompileD3DShader(LPCTSTR filePath, const char* entry, const char* shaderModel, ID3DBlob** buffer);
 };

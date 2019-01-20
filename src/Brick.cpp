@@ -1,16 +1,23 @@
 #include "Brick.h"
 #include  <WICTextureLoader.h>
 #include "DX11DemoBase.h"
+#include "VerTexPos.h"
 
 using namespace DirectX;
 
 Brick::Brick()
-	:colorMap_(nullptr)
+	:colorMap_(nullptr),
+	vertexBuffer_(nullptr),
+	indexBuffer_(nullptr)
 {}
 
 Brick::~Brick(){
 	if (colorMap_) colorMap_->Release();
+	if (vertexBuffer_) vertexBuffer_->Release();
+	if (indexBuffer_) indexBuffer_->Release();
 	colorMap_ = nullptr;
+	vertexBuffer_ = nullptr;
+	indexBuffer_ = nullptr;
 }
 
 bool Brick::Init_Resource(ID3D11Device* d3dDevice_) {

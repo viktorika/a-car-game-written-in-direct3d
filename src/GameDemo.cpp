@@ -5,10 +5,16 @@ using std::string;
 using namespace DirectX;
 
 const string texture = "\\Texture\\";
+enum CAMERA{FIRST,THIRD};
+const float radian = XM_PI / 180;
 
 GameDemo::GameDemo()
-	:colorMapSampler_(nullptr)
-{}
+	:colorMapSampler_(nullptr),
+	status_(FIRST)
+{
+	camera_.emplace_back(new LookAtCamera());
+	camera_.emplace_back(new ArcCamera());
+}
 
 GameDemo::~GameDemo() 
 {}
@@ -77,11 +83,10 @@ bool GameDemo::LoadContent()
 	d3dResult = d3dDevice_->CreateBuffer(&constDesc, 0, &projCB_);
 	if (FAILED(d3dResult))
 		return false;
-	//设置照相机
-	camera_.SetPositions(XMFLOAT3(0.0f, 10.0f, -10.0f), XMFLOAT3(0.0f, 10.0f, 10.0f));
 	//初始化skybox
 	if (!skybox_.Init_Resource(d3dDevice_)) return false;
 	if (!brick_.Init_Resource(d3dDevice_)) return false;
+	if (!car_.Init_Resource(d3dDevice_)) return false;
 	return true;
 }
 
@@ -91,8 +96,20 @@ void GameDemo::UnloadContent()
 	colorMapSampler_ = nullptr;
 }
 
-void GameDemo::Update(float dt)
-{}
+void GameDemo::Update()
+{
+	keyboardDevice_->Acquire();
+	mouseDevice_->Acquire();
+	keyboardDevice_->GetDeviceState(sizeof(keyboardKeys_), (LPVOID)&keyboardKeys_);
+	mouseDevice_->GetDeviceState(sizeof(mouseState_), (LPVOID)&mouseState_);
+	if (KEYDOWN(prevKeyboardKeys_, DIK_ESCAPE) && !KEYDOWN(keyboardKeys_, DIK_ESCAPE))
+		PostQuitMessage(0);
+	if (KEYDOWN(prevKeyboardKeys_, DIK_V) && !KEYDOWN(keyboardKeys_, DIK_V))
+		Switch();
+	memcpy(prevKeyboardKeys_, keyboardKeys_, sizeof(keyboardKeys_));
+	if (status_)
+		camera_[THIRD]->ApplyRotation(mouseState_.lY*radian, mouseState_.lX*radian);
+}
 
 void GameDemo::Render()
 {
@@ -105,7 +122,7 @@ void GameDemo::Render()
 	d3dContext_->VSSetShader(solidColorVS_, 0, 0);
 	d3dContext_->PSSetShader(solidColorPS_, 0, 0);
 	d3dContext_->PSSetSamplers(0, 1, &colorMapSampler_);
-	XMMATRIX viewMatrix_ = camera_.GetViewMatrix();
+	XMMATRIX viewMatrix_ = camera_[status_]->GetViewMatrix();
 	viewMatrix_ = XMMatrixTranspose(viewMatrix_);
 	d3dContext_->UpdateSubresource(viewCB_, 0, 0, &viewMatrix_, 0, 0);
 	d3dContext_->UpdateSubresource(projCB_, 0, 0, &projMatrix_, 0, 0);
@@ -113,7 +130,11 @@ void GameDemo::Render()
 	d3dContext_->VSSetConstantBuffers(2, 1, &projCB_);
 	skybox_.Render(d3dContext_, worldCB_,viewCB_);
 	brick_.Render(d3dContext_, worldCB_,viewCB_);
+	car_.Render(d3dContext_, worldCB_, viewCB_);
 	swapChain_->Present(0, 0);
 }
 
+void GameDemo::Switch() {
+	status_ ^= 1;
+}
 

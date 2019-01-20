@@ -1,13 +1,14 @@
 #pragma once
 
 #include <array>
-#include "Model.h"
+#include "Cube.h"
+#include <d3d11.h>
 
 using std::array;
 using DirectX::XMFLOAT3;
 using DirectX::XMFLOAT2;
 
-class SkyBox :public Model{
+class SkyBox :public Cube{
 public:
 	SkyBox();
 	virtual ~SkyBox();
@@ -21,10 +22,5 @@ private:
 	ID3D11Buffer* indexBuffer_;
 
 	array<ID3D11ShaderResourceView*, 6> colorMap_;
-	//array<array<int, 4>, 6> vertexNumber_;
 
-	//8个顶点
-	array<XMFLOAT3, 8> postion_;
-	//单个面包含4个点
-	array<array<int, 4>, 6> facevertexs_;
 };
