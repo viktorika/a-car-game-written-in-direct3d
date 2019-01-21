@@ -5,7 +5,7 @@ using std::max;
 using std::min;
 
 ArcCamera::ArcCamera()
-	:target_(0.0f,1.0f,0.0f),
+	:target_(0.0f,2.0f,0.0f),
 	distance_(5.0f),
 	xRotation_(0.0f),
 	yRotation_(0.0f),
@@ -23,7 +23,9 @@ void ArcCamera::SetRotation(float x, float y)
 	xRotation_ = min(xRotation_, xlimit);
 	yRotation_ = max(yRotation_, -ylimit);
 	yRotation_ = min(yRotation_, ylimit);
-}void ArcCamera::SetTarget(XMFLOAT3& target)
+}
+
+void ArcCamera::SetPositions(XMFLOAT3 pos, XMFLOAT3 target)
 {
 	target_ = target;
 }

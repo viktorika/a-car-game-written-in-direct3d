@@ -7,7 +7,7 @@ public:
 	ArcCamera();
 	virtual ~ArcCamera();
 	void SetRotation(float x, float y);
-	void SetTarget(XMFLOAT3& target);
+	void SetPositions(XMFLOAT3 pos, XMFLOAT3 target);
 	void ApplyRotation(float yawDelta, float pitchDelta);
 	XMMATRIX GetViewMatrix();
 

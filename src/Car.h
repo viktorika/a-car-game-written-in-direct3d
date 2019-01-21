@@ -11,7 +11,7 @@ public:
 	Car();
 	virtual ~Car();
 	bool Init_Resource(ID3D11Device* d3dDevice_);
-	void Render(ID3D11DeviceContext* d3dContext_, ID3D11Buffer* worldCB_, ID3D11Buffer* viewCB_);
+	void Render(ID3D11DeviceContext* d3dContext_, ID3D11Buffer* worldCB_, ID3D11Buffer* viewCB_, ID3D11VertexShader* tiresolidColorVS_, ID3D11Buffer* textureCB_);
 
 private:
 	ID3D11ShaderResourceView* bodycolorMap_;
@@ -24,13 +24,10 @@ private:
 	ID3D11Buffer* tirefrontindexBuffer_;
 	ID3D11Buffer* tiresideindexBuffer_;
 
-	//车身
-	//Cube body;
-	//模型空间轮胎的坐标
 	array<array<int, 6>, 4> tirevertexs_;
 	//世界空间汽车的中心坐标
 	array<float, 3> center_;
 
 	void Renderbody(ID3D11DeviceContext* d3dContext_, ID3D11Buffer* worldCB_, ID3D11Buffer* viewCB_);
-	void Rendertire(ID3D11DeviceContext* d3dContext_, ID3D11Buffer* worldCB_, ID3D11Buffer* viewCB_);
+	void Rendertire(ID3D11DeviceContext* d3dContext_, ID3D11Buffer* worldCB_, ID3D11Buffer* viewCB_, ID3D11VertexShader* tiresolidColorVS_, ID3D11Buffer* textureCB_);
 };

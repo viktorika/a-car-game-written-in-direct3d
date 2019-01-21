@@ -2,8 +2,8 @@
 using DirectX::XMMatrixLookAtLH;
 
 LookAtCamera::LookAtCamera() 
-	: position_(XMFLOAT3(0.0f, 1.0f, 0.0f)),
-	target_(XMFLOAT3(0.0f, 1.0f, 10.0f)), 
+	: position_(XMFLOAT3(0.0f, 2.0f, 0.0f)),
+	target_(XMFLOAT3(0.0f, 2.0f, 10.0f)), 
 	up_(XMFLOAT3(0.0f, 1.0f, 0.0f))
 {}
 

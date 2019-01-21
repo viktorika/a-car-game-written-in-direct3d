@@ -34,6 +34,16 @@ bool GameDemo::LoadContent()
 			vsBuffer->Release();
 		return false;
 	}
+	compileResult = CompileD3DShader(L"Fx\\tiresolid.fx", "VS_Main", "vs_5_0", &vsBuffer);
+	if (compileResult == false)
+		return false;
+	d3dResult = d3dDevice_->CreateVertexShader(vsBuffer->GetBufferPointer(), vsBuffer->GetBufferSize(), 0, &tiresolidColorVS_);
+	if (FAILED(d3dResult))
+	{
+		if (vsBuffer)
+			vsBuffer->Release();
+		return false;
+	}
 	//创建顶点输入布局
 	D3D11_INPUT_ELEMENT_DESC solidColorLayout[] =
 	{
@@ -66,7 +76,7 @@ bool GameDemo::LoadContent()
 	d3dResult = d3dDevice_->CreateSamplerState(&colorMapDesc, &colorMapSampler_);
 	if (FAILED(d3dResult))
 		return false;
-	//创建投影矩阵和常量缓存
+	//创建变换矩阵和常量缓存
 	D3D11_BUFFER_DESC constDesc;
 	ZeroMemory(&constDesc, sizeof(constDesc));
 	constDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
@@ -81,6 +91,9 @@ bool GameDemo::LoadContent()
 	if (FAILED(d3dResult))
 		return false;
 	d3dResult = d3dDevice_->CreateBuffer(&constDesc, 0, &projCB_);
+	if (FAILED(d3dResult))
+		return false;
+	d3dResult = d3dDevice_->CreateBuffer(&constDesc, 0, &textureCB_);
 	if (FAILED(d3dResult))
 		return false;
 	//初始化skybox
@@ -106,7 +119,26 @@ void GameDemo::Update()
 		PostQuitMessage(0);
 	if (KEYDOWN(prevKeyboardKeys_, DIK_V) && !KEYDOWN(keyboardKeys_, DIK_V))
 		Switch();
+	if (!KEYDOWN(prevKeyboardKeys_, DIK_W) && KEYDOWN(keyboardKeys_, DIK_W))
+		motion_.setDirection(1);
+	else if (KEYDOWN(prevKeyboardKeys_, DIK_W) && !KEYDOWN(keyboardKeys_, DIK_W))
+		motion_.setDirection(0);
+	if (!KEYDOWN(prevKeyboardKeys_, DIK_S) && KEYDOWN(keyboardKeys_, DIK_S))
+		motion_.setDirection(-1);
+	else if (KEYDOWN(prevKeyboardKeys_, DIK_S) && !KEYDOWN(keyboardKeys_, DIK_S))
+		motion_.setDirection(0);
+	if (!KEYDOWN(prevKeyboardKeys_, DIK_A) && KEYDOWN(keyboardKeys_, DIK_A))
+		motion_.setTurn(-1);
+	else if (KEYDOWN(prevKeyboardKeys_, DIK_A) && !KEYDOWN(keyboardKeys_, DIK_A))
+		motion_.setTurn(0);
+	if (!KEYDOWN(prevKeyboardKeys_, DIK_D) && KEYDOWN(keyboardKeys_, DIK_D))
+		motion_.setTurn(1);
+	else if (KEYDOWN(prevKeyboardKeys_, DIK_D) && !KEYDOWN(keyboardKeys_, DIK_D))
+		motion_.setTurn(0);
+	motion_.Move();
 	memcpy(prevKeyboardKeys_, keyboardKeys_, sizeof(keyboardKeys_));
+	camera_[FIRST]->SetPositions(motion_.getPos(),motion_.getFacing());
+	camera_[THIRD]->SetPositions(motion_.getPos(), motion_.getPos());
 	if (status_)
 		camera_[THIRD]->ApplyRotation(mouseState_.lY*radian, mouseState_.lX*radian);
 }
@@ -126,11 +158,13 @@ void GameDemo::Render()
 	viewMatrix_ = XMMatrixTranspose(viewMatrix_);
 	d3dContext_->UpdateSubresource(viewCB_, 0, 0, &viewMatrix_, 0, 0);
 	d3dContext_->UpdateSubresource(projCB_, 0, 0, &projMatrix_, 0, 0);
+	d3dContext_->VSSetConstantBuffers(0, 1, &worldCB_);
 	d3dContext_->VSSetConstantBuffers(1, 1, &viewCB_);
 	d3dContext_->VSSetConstantBuffers(2, 1, &projCB_);
+	d3dContext_->VSSetConstantBuffers(3, 1, &textureCB_);
 	skybox_.Render(d3dContext_, worldCB_,viewCB_);
 	brick_.Render(d3dContext_, worldCB_,viewCB_);
-	car_.Render(d3dContext_, worldCB_, viewCB_);
+	car_.Render(d3dContext_, worldCB_, viewCB_, tiresolidColorVS_, textureCB_);
 	swapChain_->Present(0, 0);
 }
 

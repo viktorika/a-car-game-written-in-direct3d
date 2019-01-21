@@ -7,7 +7,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	PAINTSTRUCT paintStruct;
 	HDC hDC;
-	int xPos, yPos;
 	switch (message)
 	{
 	case WM_PAINT:

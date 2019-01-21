@@ -43,26 +43,31 @@ bool Car::Init_Resource(ID3D11Device* d3dDevice_) {
 	d3dResult = d3dDevice_->CreateBuffer(&vertexDesc, nullptr, &bodyvertexBuffer_);
 	if (FAILED(d3dResult))
 		return false;
-	VertexPos tirevertices[10] =
+	VertexPos tirevertices[1442] =
 	{
 		{XMFLOAT3(-0.5f,0.0f,0.0f),XMFLOAT2(0.0f,0.0f)},
 		{XMFLOAT3(0.5f,0.0f,0.0f),XMFLOAT2(0.0f,0.0f)}
 	};
-	tirevertices[2] = { XMFLOAT3(-0.5,0.5,0), XMFLOAT2(1,0) };
+	tirevertices[2] = { XMFLOAT3(-0.5,0.5,0), XMFLOAT2(0,0.5) };
 	tirevertices[3] = { XMFLOAT3(-0.5,0.5,0),XMFLOAT2(0,0) };
-	tirevertices[4] = { XMFLOAT3(0.5,0.5,0),XMFLOAT2(1,0) };
+	tirevertices[4] = { XMFLOAT3(0.5,0.5,0),XMFLOAT2(0,0.5) };
 	tirevertices[5] = { XMFLOAT3(0.5,0.5,0),XMFLOAT2(1,0) };
-	XMMATRIX rotationMat = XMMatrixRotationRollPitchYaw(-XM_PI/90, 0.0f, 0.0f);
-	XMVECTOR vec1 = XMVectorSet(-0.5, 0.5, 0, 1);
-	XMVECTOR vec2 = XMVectorSet(0.5, 0.5, 0, 1);
-	vec1 = XMVector4Transform(vec1, rotationMat);
-	vec2 = XMVector4Transform(vec2, rotationMat);
+	XMMATRIX rotationMat1 = XMMatrixRotationRollPitchYaw(-XM_PI/90.0f, 0.0f, 0.0f);
+	XMMATRIX rotationMat2 = XMMatrixRotationRollPitchYaw(0.0f, 0.0f, XM_PI / 90.0f);
+	XMVECTOR vec1 = XMVectorSet(-0.5f, 0.5f, 0.0f, 1.0f);
+	XMVECTOR vec2 = XMVectorSet(0.5f, 0.5f, 0.0f, 1.0f);
+	XMVECTOR vec3 = XMVectorSet(0.0f, 0.5f, 0.0f, 1.0f);
+	vec1 = XMVector4Transform(vec1, rotationMat1);
+	vec2 = XMVector4Transform(vec2, rotationMat1);
+	vec3 = XMVector4Transform(vec3, rotationMat2);
 	XMFLOAT3 next1, next2;
+	XMFLOAT2 next3;
 	XMStoreFloat3(&next1, vec1);
 	XMStoreFloat3(&next2, vec2);
-	tirevertices[6] = { next1,XMFLOAT2(0,1) };
+	XMStoreFloat2(&next3, vec3);
+	tirevertices[6] = { next1,next3 };
 	tirevertices[7] = { next1,XMFLOAT2(0,1) };
-	tirevertices[8] = { next2,XMFLOAT2(0,1) };
+	tirevertices[8] = { next2,next3 };
 	tirevertices[9] = { next2,XMFLOAT2(1,1) };
 	D3D11_SUBRESOURCE_DATA resourceData;
 	ZeroMemory(&resourceData, sizeof(resourceData));
@@ -126,8 +131,6 @@ void Car::Renderbody(ID3D11DeviceContext* d3dContext_, ID3D11Buffer* worldCB_, I
 	XMMATRIX worldMat = rotationMat * scaling * translationMat;
 	worldMat = XMMatrixTranspose(worldMat);
 	d3dContext_->UpdateSubresource(worldCB_, 0, 0, &worldMat, 0, 0);
-	d3dContext_->VSSetConstantBuffers(0, 1, &worldCB_);
-	d3dContext_->VSSetConstantBuffers(1, 1, &viewCB_);
 	d3dContext_->PSSetShaderResources(0, 1, &bodycolorMap_);
 	for (int i = 0; i < 6; ++i) {
 		array<int, 4> index = facevertexs_[i];
@@ -141,19 +144,12 @@ void Car::Renderbody(ID3D11DeviceContext* d3dContext_, ID3D11Buffer* worldCB_, I
 		d3dContext_->DrawIndexed(6, 0, 0);
 	}
 }
-void Car::Rendertire(ID3D11DeviceContext* d3dContext_, ID3D11Buffer* worldCB_, ID3D11Buffer* viewCB_) {
+void Car::Rendertire(ID3D11DeviceContext* d3dContext_, ID3D11Buffer* worldCB_, ID3D11Buffer* viewCB_, ID3D11VertexShader* tiresolidColorVS_, ID3D11Buffer* textureCB_) {
 	unsigned int stride = sizeof(VertexPos);
 	unsigned int offset = 0;
 	d3dContext_->IASetVertexBuffers(0, 1, &tirevertexBuffer_, &stride, &offset);
-	//d3dContext_->IASetIndexBuffer(tireindexBuffer_, DXGI_FORMAT_R16_UINT, 0);
 	d3dContext_->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	//XMMATRIX translationMat = XMMatrixTranslation(0.0f, 0.5f, -1.0f);
-	XMMATRIX scaling = XMMatrixScaling(1.0f, 1.0f, 1.0f);
-	//XMMATRIX st = scaling * translationMat;
-	d3dContext_->VSSetConstantBuffers(0, 1, &worldCB_);
-	d3dContext_->VSSetConstantBuffers(1, 1, &viewCB_);
-	//d3dContext_->PSSetShaderResources(0, 1, &tirefrontcolorMap_);
-	float radian = -XM_PI / 90;
+	const float radian = -XM_PI / 90.0f;
 	XMMATRIX translationMat[4] = {
 		XMMatrixTranslation(-1.0f,0.5f,-1.0f),
 		XMMatrixTranslation(1.0f,0.5f,-1.0f),
@@ -161,29 +157,34 @@ void Car::Rendertire(ID3D11DeviceContext* d3dContext_, ID3D11Buffer* worldCB_, I
 		XMMatrixTranslation(1.0f,0.5f,1.0f),
 	};
 	for (int j = 0; j < 4;++j) {
-		XMMATRIX st = scaling * translationMat[j];
 		d3dContext_->IASetIndexBuffer(tirefrontindexBuffer_, DXGI_FORMAT_R16_UINT, 0);
 		d3dContext_->PSSetShaderResources(0, 1, &tirefrontcolorMap_);
 		for (int i = 0; i < 180; ++i) {
 			XMMATRIX rotationMat = XMMatrixRotationRollPitchYaw(radian*i, 0.0f, 0.0f);
-			XMMATRIX worldMat = rotationMat * st;
-			worldMat = XMMatrixTranspose(worldMat);
-			d3dContext_->UpdateSubresource(worldCB_, 0, 0, &worldMat, 0, 0);
-			d3dContext_->DrawIndexed(6, 0, 0);
-		}
-		d3dContext_->IASetIndexBuffer(tiresideindexBuffer_, DXGI_FORMAT_R16_UINT, 0);
-		d3dContext_->PSSetShaderResources(0, 1, &tiresidecolorMap_);
-		for (int i = 0; i < 180; ++i) {
-			XMMATRIX rotationMat = XMMatrixRotationRollPitchYaw(radian*i, 0.0f, 0.0f);
-			XMMATRIX worldMat = rotationMat * st;
+			XMMATRIX worldMat = rotationMat * translationMat[j];
 			worldMat = XMMatrixTranspose(worldMat);
 			d3dContext_->UpdateSubresource(worldCB_, 0, 0, &worldMat, 0, 0);
 			d3dContext_->DrawIndexed(6, 0, 0);
 		}
 	}
+	for (int j = 0; j < 4; ++j) {
+		d3dContext_->VSSetShader(tiresolidColorVS_, 0, 0);
+		d3dContext_->IASetIndexBuffer(tiresideindexBuffer_, DXGI_FORMAT_R16_UINT, 0);
+		d3dContext_->PSSetShaderResources(0, 1, &tiresidecolorMap_);
+		for (int i = 0; i < 180; ++i) {
+			XMMATRIX rotationMat = XMMatrixRotationRollPitchYaw(radian*i, 0.0f, 0.0f);
+			XMMATRIX worldMat = rotationMat * translationMat[j];
+			worldMat = XMMatrixTranspose(worldMat);
+			d3dContext_->UpdateSubresource(worldCB_, 0, 0, &worldMat, 0, 0);
+			XMMATRIX textureMat = XMMatrixRotationRollPitchYaw(0.0f, 0.0f, radian*i);
+			textureMat *= XMMatrixTranslation(0.5f, 0.5f, 0.0f);
+			d3dContext_->UpdateSubresource(textureCB_, 0, 0, &textureMat, 0, 0);
+			d3dContext_->DrawIndexed(6, 0, 0);
+		}
+	}
 }
 
-void Car::Render(ID3D11DeviceContext* d3dContext_, ID3D11Buffer* worldCB_, ID3D11Buffer* viewCB_) {
+void Car::Render(ID3D11DeviceContext* d3dContext_, ID3D11Buffer* worldCB_, ID3D11Buffer* viewCB_, ID3D11VertexShader* tiresolidColorVS_, ID3D11Buffer* textureCB_) {
 	Renderbody(d3dContext_, worldCB_, viewCB_);
-	Rendertire(d3dContext_, worldCB_, viewCB_);
+	Rendertire(d3dContext_, worldCB_, viewCB_, tiresolidColorVS_, textureCB_);
 }

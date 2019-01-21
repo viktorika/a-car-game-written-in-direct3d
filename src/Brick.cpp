@@ -73,7 +73,6 @@ void Brick::Render(ID3D11DeviceContext* d3dContext_, ID3D11Buffer* worldCB_,ID3D
 	XMMATRIX rotationMat = XMMatrixRotationRollPitchYaw(0.0f, 0.0f, 0.0f);
 	XMMATRIX scaling = XMMatrixScaling(1.0f, 1.0f, 1.0f);
 	XMMATRIX rsMat = rotationMat * scaling;
-	d3dContext_->VSSetConstantBuffers(0, 1, &worldCB_);
 	d3dContext_->PSSetShaderResources(0, 1, &colorMap_);
 	for (float x = -1000; x < 100; x += 10) {
 		for (float z = -1000; z < 100; z += 10) {

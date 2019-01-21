@@ -78,8 +78,6 @@ void SkyBox::Render(ID3D11DeviceContext* d3dContext_, ID3D11Buffer* worldCB_, ID
 	XMMATRIX worldMat = rotationMat * scaling * translationMat;
 	worldMat = XMMatrixTranspose(worldMat);
 	d3dContext_->UpdateSubresource(worldCB_, 0, 0, &worldMat, 0, 0);
-	d3dContext_->VSSetConstantBuffers(0, 1, &worldCB_);
-	d3dContext_->VSSetConstantBuffers(1, 1, &viewCB_);
 	for (int i = 0; i < colorMap_.size(); ++i) {
 		array<int, 4> index = facevertexs_[i];
 		VertexPos vertex[]={
