@@ -10,8 +10,16 @@ Car::Car()
 	tirevertexBuffer_(nullptr),
 	bodyindexBuffer_(nullptr),
 	tirefrontindexBuffer_(nullptr),
-	tiresideindexBuffer_(nullptr)
-{}
+	tiresideindexBuffer_(nullptr),
+	wholerotation_(0.0f),
+	tirerotation_(0.0f),
+	tiretexturerotation_(0.0f)
+{
+	center_.x = center_.z = 0.0f;
+	center_.y = 2.0f;
+	for (auto &it : wheelturn_)
+		it = 0;
+}
 
 Car::~Car() {
 	if (bodycolorMap_) bodycolorMap_->Release();
@@ -52,7 +60,7 @@ bool Car::Init_Resource(ID3D11Device* d3dDevice_) {
 	tirevertices[3] = { XMFLOAT3(-0.5,0.5,0),XMFLOAT2(0,0) };
 	tirevertices[4] = { XMFLOAT3(0.5,0.5,0),XMFLOAT2(0,0.5) };
 	tirevertices[5] = { XMFLOAT3(0.5,0.5,0),XMFLOAT2(1,0) };
-	XMMATRIX rotationMat1 = XMMatrixRotationRollPitchYaw(-XM_PI/90.0f, 0.0f, 0.0f);
+	XMMATRIX rotationMat1 = XMMatrixRotationRollPitchYaw(-XM_PI / 90.0f, 0.0f, 0.0f);
 	XMMATRIX rotationMat2 = XMMatrixRotationRollPitchYaw(0.0f, 0.0f, XM_PI / 90.0f);
 	XMVECTOR vec1 = XMVectorSet(-0.5f, 0.5f, 0.0f, 1.0f);
 	XMVECTOR vec2 = XMVectorSet(0.5f, 0.5f, 0.0f, 1.0f);
@@ -119,14 +127,38 @@ bool Car::Init_Resource(ID3D11Device* d3dDevice_) {
 	return true;
 }
 
+void Car::setCenter(XMFLOAT3 center) {
+	center_ = center;
+}
+
+void Car::setWholerotation(float wholerotation) {
+	wholerotation_ = wholerotation;
+}
+
+void Car::settiretexturerotaion(float distance) {
+	tiretexturerotation_ += distance * 2;
+	if (tiretexturerotation_ >= XM_2PI)
+		tiretexturerotation_ -= XM_2PI;
+	if (tiretexturerotation_ < 0)
+		tiretexturerotation_ += XM_2PI;
+}
+void Car::setwheelTurn(int direction, int turn) {
+	switch (direction) {
+	case -1:wheelturn_[0] = -turn; break;
+	case 0:wheelturn_[0] = wheelturn_[1] = 0;break;
+	case 1:wheelturn_[1] = turn; break;
+	default:break;
+	}
+}
+
 void Car::Renderbody(ID3D11DeviceContext* d3dContext_, ID3D11Buffer* worldCB_, ID3D11Buffer* viewCB_) {
 	unsigned int stride = sizeof(VertexPos);
 	unsigned int offset = 0;
 	d3dContext_->IASetVertexBuffers(0, 1, &bodyvertexBuffer_, &stride, &offset);
 	d3dContext_->IASetIndexBuffer(bodyindexBuffer_, DXGI_FORMAT_R16_UINT, 0);
 	d3dContext_->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	XMMATRIX rotationMat = XMMatrixRotationRollPitchYaw(0.0f, 0.0f, 0.0f);
-	XMMATRIX translationMat = XMMatrixTranslation(0.0f, 2.0f, 0.0f);
+	XMMATRIX rotationMat = XMMatrixRotationRollPitchYaw(0.0f, wholerotation_, 0.0f);
+	XMMATRIX translationMat = XMMatrixTranslation(center_.x, 2.0f, center_.z);
 	XMMATRIX scaling = XMMatrixScaling(1.5f, 1.0f, 1.5f);
 	XMMATRIX worldMat = rotationMat * scaling * translationMat;
 	worldMat = XMMatrixTranspose(worldMat);
@@ -150,33 +182,39 @@ void Car::Rendertire(ID3D11DeviceContext* d3dContext_, ID3D11Buffer* worldCB_, I
 	d3dContext_->IASetVertexBuffers(0, 1, &tirevertexBuffer_, &stride, &offset);
 	d3dContext_->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	const float radian = -XM_PI / 90.0f;
-	XMMATRIX translationMat[4] = {
-		XMMatrixTranslation(-1.0f,0.5f,-1.0f),
-		XMMatrixTranslation(1.0f,0.5f,-1.0f),
-		XMMatrixTranslation(-1.0f,0.5f,1.0f),
-		XMMatrixTranslation(1.0f,0.5f,1.0f),
+	XMVECTOR tireoffset[4] = {
+		XMVectorSet(-1.0f,0.5f,-1.0f,1.0f),
+		XMVectorSet(1.0f,0.5f,-1.0f,1.0f),
+		XMVectorSet(-1.0f,0.5f,1.0f,1.0f),
+		XMVectorSet(1.0f,0.5f,1.0f,1.0f),
 	};
-	for (int j = 0; j < 4;++j) {
+	XMMATRIX translationMat[4];
+	for (int i = 0; i < 4; ++i) {
+		tireoffset[i] = XMVector4Transform(tireoffset[i], XMMatrixRotationRollPitchYaw(0.0f, wholerotation_, 0.0f));
+		tireoffset[i] += XMVectorSet(center_.x, 0.0f, center_.z, 1.0f);
+		translationMat[i] = XMMatrixTranslationFromVector(tireoffset[i]);
+	}
+	for (int i = 0; i < 4;++i) {
 		d3dContext_->IASetIndexBuffer(tirefrontindexBuffer_, DXGI_FORMAT_R16_UINT, 0);
 		d3dContext_->PSSetShaderResources(0, 1, &tirefrontcolorMap_);
-		for (int i = 0; i < 180; ++i) {
-			XMMATRIX rotationMat = XMMatrixRotationRollPitchYaw(radian*i, 0.0f, 0.0f);
-			XMMATRIX worldMat = rotationMat * translationMat[j];
+		for (int j = 0; j < 180; ++j) {
+			XMMATRIX rotationMat = XMMatrixRotationRollPitchYaw(radian*j + tiretexturerotation_, wholerotation_ + wheelturn_[i >> 1] * XM_PIDIV4, 0.0f);
+			XMMATRIX worldMat = rotationMat * translationMat[i];
 			worldMat = XMMatrixTranspose(worldMat);
 			d3dContext_->UpdateSubresource(worldCB_, 0, 0, &worldMat, 0, 0);
 			d3dContext_->DrawIndexed(6, 0, 0);
 		}
 	}
-	for (int j = 0; j < 4; ++j) {
+	for (int i = 0; i < 4; ++i) {
 		d3dContext_->VSSetShader(tiresolidColorVS_, 0, 0);
 		d3dContext_->IASetIndexBuffer(tiresideindexBuffer_, DXGI_FORMAT_R16_UINT, 0);
 		d3dContext_->PSSetShaderResources(0, 1, &tiresidecolorMap_);
-		for (int i = 0; i < 180; ++i) {
-			XMMATRIX rotationMat = XMMatrixRotationRollPitchYaw(radian*i, 0.0f, 0.0f);
-			XMMATRIX worldMat = rotationMat * translationMat[j];
+		for (int j = 0; j < 180; ++j) {
+			XMMATRIX rotationMat = XMMatrixRotationRollPitchYaw(radian*j + tiretexturerotation_, wholerotation_ + wheelturn_[i >> 1] * XM_PIDIV4, 0.0f);
+			XMMATRIX worldMat = rotationMat * translationMat[i];
 			worldMat = XMMatrixTranspose(worldMat);
 			d3dContext_->UpdateSubresource(worldCB_, 0, 0, &worldMat, 0, 0);
-			XMMATRIX textureMat = XMMatrixRotationRollPitchYaw(0.0f, 0.0f, radian*i);
+			XMMATRIX textureMat = XMMatrixRotationRollPitchYaw(0.0f, 0.0f, radian*j);
 			textureMat *= XMMatrixTranslation(0.5f, 0.5f, 0.0f);
 			d3dContext_->UpdateSubresource(textureCB_, 0, 0, &textureMat, 0, 0);
 			d3dContext_->DrawIndexed(6, 0, 0);

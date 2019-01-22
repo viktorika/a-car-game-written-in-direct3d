@@ -14,7 +14,11 @@ public:
 	void setTurn(int turn);
 	void Move();
 	XMFLOAT3 getPos();
-	XMFLOAT3 getFacing();
+	XMFLOAT3 getFocus();
+	float getWholerotation();
+	int getTurn();
+	int getDirection();
+	float getDistance();
 
 private:
 	XMVECTOR pos_;

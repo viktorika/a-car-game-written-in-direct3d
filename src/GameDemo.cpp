@@ -137,8 +137,12 @@ void GameDemo::Update()
 		motion_.setTurn(0);
 	motion_.Move();
 	memcpy(prevKeyboardKeys_, keyboardKeys_, sizeof(keyboardKeys_));
-	camera_[FIRST]->SetPositions(motion_.getPos(),motion_.getFacing());
+	camera_[FIRST]->SetPositions(motion_.getPos(),motion_.getFocus());
 	camera_[THIRD]->SetPositions(motion_.getPos(), motion_.getPos());
+	car_.setCenter(motion_.getPos());
+	car_.setWholerotation(motion_.getWholerotation());
+	car_.settiretexturerotaion(motion_.getDistance());
+	car_.setwheelTurn(motion_.getDirection(), motion_.getTurn());
 	if (status_)
 		camera_[THIRD]->ApplyRotation(mouseState_.lY*radian, mouseState_.lX*radian);
 }
