@@ -1,0 +1,5 @@
+﻿  main.cpp
+  c:\program files (x86)\windows kits\10\include\10.0.17763.0\um\dinput.h: DIRECTINPUT_VERSION undefined. Defaulting to version 0x0800
+c:\users\wwq\source\repos\car game\car game\main.cpp(54): warning C4316: “GameDemo”: 在堆上分配的对象可能不是对齐 16
+c:\users\wwq\source\repos\car game\car game\main.cpp(61): warning C4244: “初始化”: 从“float”转换到“DWORD”，可能丢失数据
+  car game.vcxproj -> C:\Users\WWQ\source\repos\car game\Debug\car game.exe

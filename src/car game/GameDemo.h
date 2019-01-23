@@ -23,7 +23,6 @@ public:
 	void UnloadContent();
 	void Update();
 	void Render();
-	void Switch();
 
 private:
 	vector<shared_ptr<Camera>> camera_;
@@ -47,4 +46,6 @@ private:
 	ID3D11PixelShader* solidColorPS_;
 
 	ID3D11InputLayout* inputLayout_;
+
+	void Switch();
 };

@@ -57,6 +57,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE prevInstance, LPWSTR cmdLine,
 	if (!result)
 		return -1;
 	MSG msg = { 0 };
+	const int fps = 60;
+	DWORD timeInPerFrame = 1000.0f / fps;
 	while (msg.message != WM_QUIT)
 	{
 		if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE))
@@ -65,8 +67,12 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE prevInstance, LPWSTR cmdLine,
 			DispatchMessage(&msg);
 		}
 		// Update and Draw
+		DWORD timeBegin = GetTickCount();
 		demo->Update();
 		demo->Render();
+		DWORD timePhase = GetTickCount()-timeBegin;
+		if (timePhase < timeInPerFrame)
+			Sleep(DWORD(timeInPerFrame - timePhase));
 	}
 	// Demo Shutdown
 	demo->Shutdown();
